@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rubik của Đặng Minh An</title>
+<style>
+:root{--bg:#e9e6e1;--ink:#26231f;--btn:#fff;--line:#c9c4bc;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1b19;--ink:#efebe5;--btn:#2b2825;--line:#3f3b36}}
+:root[data-theme="dark"]{--bg:#1d1b19;--ink:#efebe5;--btn:#2b2825;--line:#3f3b36}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Trebuchet MS",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;overflow:hidden}
+#stage{flex:1;width:100%;display:flex;align-items:center;justify-content:center;perspective:900px;touch-action:none;cursor:grab;min-height:0}
+#cube{position:relative;width:0;height:0;transform-style:preserve-3d}
+.c{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;transform-style:preserve-3d}
+.f{position:absolute;inset:0;box-sizing:border-box;border:3px solid #111;border-radius:9px;backface-visibility:hidden}
+#ui{width:100%;max-width:420px;padding:10px 16px 18px;box-sizing:border-box}
+#info{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;font-size:15px}
+#info b{font-size:20px}
+#pad{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+button{font:inherit;font-size:15px;padding:10px 0;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px}
+button:active{transform:scale(.95)}
+button:focus-visible{outline:3px solid #2f6fdd;outline-offset:2px}
+.w{grid-column:span 3;margin-top:4px}
+#top{width:100%;text-align:center;font-weight:800;font-size:clamp(18px,5.5vw,28px);padding:12px 8px 4px;box-sizing:border-box;animation:rb 1.4s step-end infinite}
+@keyframes rb{0%{color:#ff2a2a}14%{color:#ff8a00}28%{color:#ffd500}43%{color:#19c34a}57%{color:#1e90ff}71%{color:#6a4cff}86%{color:#c026ff}}
+@media (prefers-reduced-motion:reduce){#top{animation:none;background:linear-gradient(90deg,#ff2a2a,#ff8a00,#ffd500,#19c34a,#1e90ff,#6a4cff,#c026ff);-webkit-background-clip:text;background-clip:text;color:transparent}}
+</style>
+</head>
+<body>
+<div id="top">Web do Đặng Minh An làm</div>
+<div id="stage"><div id="cube"></div></div>
+<div id="ui">
+  <div style="font-size:13px;opacity:.7;margin-bottom:6px">Vuốt lên ô màu để xoay</div><div id="info"><span></span><span>Số nước đi: <span id="n">0</span></span></div>
+  <div id="pad"></div>
+</div>
+<script>
+const S=64,PI=Math.PI;
+const COL={R:'#c8321f',L:'#f08a1c',U:'#f4f1ea',D:'#f2c717',F:'#2a9d4a',B:'#2063c4',X:'#1a1a1a'};
+const MV={U:['y',-1,-90],D:['y',1,90],L:['x',-1,-90],R:['x',1,90],F:['z',1,90],B:['z',-1,-90]};
+const AX={x:0,y:1,z:2};
+const I=[[1,0,0],[0,1,0],[0,0,1]];
+function rot(a,d){const r=d*PI/180,c=Math.cos(r),s=Math.sin(r);
+ if(a==='x')return[[1,0,0],[0,c,-s],[0,s,c]];
+ if(a==='y')return[[c,0,s],[0,1,0],[-s,0,c]];
+ return[[c,-s,0],[s,c,0],[0,0,1]];}
+const mul=(A,B)=>A.map((r,i)=>[0,1,2].map(j=>r[0]*B[0][j]+r[1]*B[1][j]+r[2]*B[2][j]));
+const app=(M,v)=>M.map(r=>r[0]*v[0]+r[1]*v[1]+r[2]*v[2]);
+const cube=document.getElementById('cube');
+const FT=[['rotateY(90deg)',0,1,'R','L'],['rotateY(-90deg)',0,-1,'L','R'],['rotateX(-90deg)',1,1,'D','U'],['rotateX(90deg)',1,-1,'U','D'],['',2,1,'F','B'],['rotateY(180deg)',2,-1,'B','F']];
+const cs=[];
+for(let x=-1;x<=1;x++)for(let y=-1;y<=1;y++)for(let z=-1;z<=1;z++){
+ const el=document.createElement('div');el.className='c';
+ const p=[x,y,z];
+ FT.forEach(([t,ax,sg,col])=>{const f=document.createElement('div');f.className='f';const nv=[0,0,0];nv[ax]=sg;f._n=nv;
+  f.style.transform=t+' translateZ('+S/2+'px)';
+  f.style.background=p[ax]===sg?COL[col]:COL.X;el.appendChild(f);});
+ cube.appendChild(el);const o={el,p,R:I};el._c=o;cs.push(o);}
+function draw(c,E){const R=E?mul(E,c.R):c.R,q=E?app(E,c.p):c.p;
+ c.el.style.transform='matrix3d('+[R[0][0],R[1][0],R[2][0],0,R[0][1],R[1][1],R[2][1],0,R[0][2],R[1][2],R[2][2],0,q[0]*S,q[1]*S,q[2]*S,1].join(',')+')';}
+cs.forEach(c=>draw(c));
+let rx=-28,ry=-38;
+const view=()=>cube.style.transform='rotateX('+rx+'deg) rotateY('+ry+'deg)';view();
+const st=document.getElementById('stage');let drag=null;
+let tp=null;
+st.addEventListener('pointerdown',e=>{const f=e.target.closest&&e.target.closest('.f');tp=f?{c:f.parentNode._c,n:f._n,s:[e.clientX,e.clientY]}:null;drag=[e.clientX,e.clientY];st.setPointerCapture(e.pointerId);st.style.cursor='grabbing'});
+function proj(v){const w=app(rot('x',rx),app(rot('y',ry),v));return[w[0],w[1]]}
+function swipe(dx,dy){const c=tp.c,n=app(c.R,tp.n).map(Math.round),P=c.p.map((v,i)=>v+n[i]*.5);let best=null;
+ for(const a of 'xyz'){if(n[AX[a]]!==0)continue;const P2=app(rot(a,1),P),sv=proj(P2.map((v,i)=>v-P[i])),dot=(sv[0]*dx+sv[1]*dy)/(Math.hypot(sv[0],sv[1])||1);
+  if(!best||Math.abs(dot)>Math.abs(best.dot))best={a,dot};}
+ if(best)turn(best.a,c.p[AX[best.a]],best.dot>0?90:-90);}
+st.addEventListener('pointermove',e=>{if(!drag)return;
+ if(tp){const dx=e.clientX-tp.s[0],dy=e.clientY-tp.s[1];if(Math.hypot(dx,dy)>14){swipe(dx,dy);tp=null;drag=null}return}
+ ry+=(e.clientX-drag[0])*.5;rx=Math.max(-85,Math.min(85,rx-(e.clientY-drag[1])*.5));drag=[e.clientX,e.clientY];view()});
+st.addEventListener('pointerup',()=>{drag=null;st.style.cursor='grab'});
+let busy=false,q=[],count=0,fast=false;
+const nEl=document.getElementById('n');
+function run(){if(busy||!q.length)return;busy=true;
+ const [a,l,d]=q.shift(),i=AX[a];
+ const sel=cs.filter(c=>c.p[i]===l),dur=fast?110:300,t0=performance.now();
+ (function step(t){let k=Math.min(1,(t-t0)/dur);k=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+  const E=rot(a,d*k);sel.forEach(c=>draw(c,E));
+  if(t-t0<dur)requestAnimationFrame(step);
+  else{const F=rot(a,d);sel.forEach(c=>{c.R=mul(F,c.R).map(r=>r.map(Math.round));c.p=app(F,c.p).map(Math.round);draw(c)});
+   busy=false;run();}})(t0);}
+function turn(a,l,d){q.push([a,l,d]);count++;nEl.textContent=count;run();}
+function move(n,inv,silent){const [a,l,d0]=MV[n];q.push([a,l,inv?-d0:d0]);if(!silent){count++;nEl.textContent=count}run();}
+const pad=document.getElementById('pad');
+function btn(label,fn,cls){const b=document.createElement('button');b.textContent=label;if(cls)b.className=cls;b.onclick=fn;pad.appendChild(b);}
+'UDLRFB'.split('').forEach(n=>btn(n,()=>move(n,false)));
+'UDLRFB'.split('').forEach(n=>btn(n+'’',()=>move(n,true)));
+btn('Xáo trộn',()=>{fast=true;let last='';for(let i=0;i<20;i++){let n;do{n='UDLRFB'[Math.random()*6|0]}while(n===last);last=n;move(n,Math.random()<.5,true)}
+ count=0;nEl.textContent=0;const w=setInterval(()=>{if(!busy&&!q.length){fast=false;clearInterval(w)}},100)},'w');
+btn('Đặt lại',()=>{q=[];const go=()=>{if(busy){setTimeout(go,50);return}cs.forEach(c=>{});location.reload()};go()},'w');
+</script>
+</body>
+</html>
